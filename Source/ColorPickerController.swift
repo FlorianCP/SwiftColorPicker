@@ -17,7 +17,7 @@ public class ColorPickerController: NSObject {
     // Color Well
     public var colorWell:ColorWell {
         didSet {
-            huePicker.setHueFromColor(colorWell.color)
+            huePicker.setHueFromColor(color: colorWell.color)
             colorPicker.color =  colorWell.color
         }
     }
@@ -30,7 +30,7 @@ public class ColorPickerController: NSObject {
         set(value) {
             colorPicker.color = value!
             colorWell.color = value!
-            huePicker.setHueFromColor(value!)
+            huePicker.setHueFromColor(color: value!)
         }
         get {
             return colorPicker.color
@@ -42,10 +42,10 @@ public class ColorPickerController: NSObject {
         self.colorPicker = svPickerView
         self.colorWell = colorWell
         self.colorWell.color = colorPicker.color
-        self.huePicker.setHueFromColor(colorPicker.color)
+        self.huePicker.setHueFromColor(color: colorPicker.color)
         super.init()
         self.colorPicker.onColorChange = {(color, finished) -> Void in
-            self.huePicker.setHueFromColor(color)
+            self.huePicker.setHueFromColor(color: color)
             self.colorWell.previewColor = (finished) ? nil : color
             if(finished) {self.colorWell.color = color}
             self.onColorChange?(color: color, finished: finished)

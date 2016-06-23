@@ -14,8 +14,8 @@ public class ColorPicker: UIView {
     private var pickerImage2:PickerImage?
     private var image:UIImage?
     private var data1Shown = false
-    private lazy var opQueue:NSOperationQueue = {return NSOperationQueue()}()
-    private var lock:NSLock = NSLock()
+    private lazy var opQueue:OperationQueue = {return OperationQueue()}()
+    private var lock:Lock = Lock()
     private var rerender = false
     public var onColorChange:((color:UIColor, finished:Bool)->Void)? = nil
     
@@ -38,7 +38,7 @@ public class ColorPicker: UIView {
         }
 
     }
-    private var currentPoint:CGPoint = CGPointZero
+    private var currentPoint:CGPoint = CGPoint.zero
 
 
     public func saturationFromCurrentPoint() -> CGFloat {
@@ -60,7 +60,7 @@ public class ColorPicker: UIView {
             if hue != h || pickerImage1 === nil {
                 self.h = hue
             }
-            currentPoint = CGPointMake(saturation * bounds.width, brightness * bounds.height)
+            currentPoint = CGPoint(x: saturation * bounds.width, y: brightness * bounds.height)
             self.setNeedsDisplay()
         }
         get {
@@ -79,43 +79,43 @@ public class ColorPicker: UIView {
     }
     
     func commonInit() {
-        userInteractionEnabled = true
+        isUserInteractionEnabled = true
         clipsToBounds = false
-        self.addObserver(self, forKeyPath: "bounds", options: [NSKeyValueObservingOptions.New, NSKeyValueObservingOptions.Initial], context: nil)
+        self.addObserver(self, forKeyPath: "bounds", options: [NSKeyValueObservingOptions.new, NSKeyValueObservingOptions.initial], context: nil)
     }
     
     deinit {
         self.removeObserver(self, forKeyPath: "bounds")
     }
 
-    public override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    public override func observeValue(forKeyPath keyPath: String?, of object: AnyObject?, change: [NSKeyValueChangeKey : AnyObject]?, context: UnsafeMutablePointer<Void>?) {
         if keyPath == "bounds" {
             if let pImage1 = pickerImage1 {
-                pImage1.changeSize(Int(self.bounds.width), height: Int(self.bounds.height))
+                pImage1.changeSize(width: Int(self.bounds.width), height: Int(self.bounds.height))
             }
             if let pImage2 = pickerImage2 {
-                pImage2.changeSize(Int(self.bounds.width), height: Int(self.bounds.height))
+                pImage2.changeSize(width: Int(self.bounds.width), height: Int(self.bounds.height))
             }
             renderBitmap()
             self.setNeedsDisplay()
         } else {
-            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
         }
     }
     
-    public override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let touch = touches.first! as UITouch
-        handleTouche(touch, ended: false)
+        handleTouche(touch: touch, ended: false)
     }
     
-    public override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?) {
+    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         let touch = touches.first! as UITouch
-        handleTouche(touch, ended: false)
+        handleTouche(touch: touch, ended: false)
     }
     
-    public override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
+    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         let touch = touches.first! as UITouch
-        handleTouche(touch, ended: true)
+        handleTouche(touch: touch, ended: true)
     }
     
     private func handleColorChange(color:UIColor, changing:Bool) {
@@ -129,15 +129,15 @@ public class ColorPicker: UIView {
     
     private func handleTouche(touch:UITouch, ended:Bool) {
         // set current point
-        let point = touch.locationInView(self)
-        if CGRectContainsPoint(self.bounds, point) {
+        let point = touch.location(in: self)
+        if self.bounds.contains(point) {
             currentPoint = point
         } else {
             let x:CGFloat = min(bounds.width, max(0, point.x))
             let y:CGFloat = min(bounds.width, max(0, point.y))
-            currentPoint = CGPointMake(x, y)
+            currentPoint = CGPoint(x: x, y: y)
         }
-        handleColorChange(pointToColor(point), changing: !ended)
+        handleColorChange(color: pointToColor(point: point), changing: !ended)
     }
     
     private func pointToColor(point:CGPoint) ->UIColor {
@@ -150,7 +150,7 @@ public class ColorPicker: UIView {
         if self.bounds.isEmpty {
             return
         }
-        if !lock.tryLock() {
+        if !lock.try() {
             rerender = true
             return
         }
@@ -161,10 +161,10 @@ public class ColorPicker: UIView {
             self.pickerImage2 = PickerImage(width: Int(bounds.width), height: Int(bounds.height))
         }
         
-        opQueue.addOperationWithBlock { () -> Void in
+        opQueue.addOperation { () -> Void in
             // Write colors to data array
-            if self.data1Shown { self.pickerImage2!.writeColorData(self.h, a:self.a) }
-            else { self.pickerImage1!.writeColorData(self.h, a:self.a)}
+            if self.data1Shown { self.pickerImage2!.writeColorData(h: self.h, a:self.a) }
+            else { self.pickerImage1!.writeColorData(h: self.h, a:self.a)}
             
             
             // flip images
@@ -172,7 +172,7 @@ public class ColorPicker: UIView {
             self.data1Shown = !self.data1Shown
             
             // make changes visible
-            NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+            OperationQueue.main().addOperation({ () -> Void in
                 self.setNeedsDisplay()
                 self.lock.unlock()
                 if self.rerender {
@@ -186,20 +186,20 @@ public class ColorPicker: UIView {
     
 
 
-    public override func drawRect(rect: CGRect) {
+    public override func draw(_ rect: CGRect) {
         if let img = image {
-            img.drawInRect(rect)
+            img.draw(in: rect)
         }
         
         //// Oval Drawing
-        let ovalPath = UIBezierPath(ovalInRect: CGRectMake(currentPoint.x - 5, currentPoint.y - 5, 10, 10))
-        UIColor.whiteColor().setStroke()
+        let ovalPath = UIBezierPath(ovalIn: CGRect(x: currentPoint.x - 5, y: currentPoint.y - 5, width: 10, height: 10))
+        UIColor.white().setStroke()
         ovalPath.lineWidth = 1
         ovalPath.stroke()
         
         //// Oval 2 Drawing
-        let oval2Path = UIBezierPath(ovalInRect: CGRectMake(currentPoint.x - 4, currentPoint.y - 4, 8, 8))
-        UIColor.blackColor().setStroke()
+        let oval2Path = UIBezierPath(ovalIn: CGRect(x: currentPoint.x - 4, y: currentPoint.y - 4, width: 8, height: 8))
+        UIColor.black().setStroke()
         oval2Path.lineWidth = 1
         oval2Path.stroke()
     }
