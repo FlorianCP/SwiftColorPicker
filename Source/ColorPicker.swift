@@ -57,7 +57,7 @@ public class ColorPicker: UIView {
             var alpha:CGFloat = 1
             value.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
             a = alpha
-            if hue != h || pickerImage1 === nil {
+            if hue != h || pickerImage1 == nil {
                 self.h = hue
             }
             currentPoint = CGPoint(x: saturation * bounds.width, y: brightness * bounds.height)
@@ -90,10 +90,10 @@ public class ColorPicker: UIView {
 
     public override func observeValue(forKeyPath keyPath: String?, of object: AnyObject?, change: [NSKeyValueChangeKey : AnyObject]?, context: UnsafeMutablePointer<Void>?) {
         if keyPath == "bounds" {
-            if let pImage1 = pickerImage1 {
+            if var pImage1 = pickerImage1 {
                 pImage1.changeSize(width: Int(self.bounds.width), height: Int(self.bounds.height))
             }
-            if let pImage2 = pickerImage2 {
+            if var pImage2 = pickerImage2 {
                 pImage2.changeSize(width: Int(self.bounds.width), height: Int(self.bounds.height))
             }
             renderBitmap()
@@ -163,12 +163,15 @@ public class ColorPicker: UIView {
         
         opQueue.addOperation { () -> Void in
             // Write colors to data array
-            if self.data1Shown { self.pickerImage2!.writeColorData(h: self.h, a:self.a) }
-            else { self.pickerImage1!.writeColorData(h: self.h, a:self.a)}
+            if self.data1Shown {
+                self.pickerImage2!.writeColorData(hue: self.h, alpha:self.a)
+            } else {
+                self.pickerImage1!.writeColorData(hue: self.h, alpha:self.a)
+            }
             
             
             // flip images
-            self.image = self.data1Shown ? self.pickerImage2!.image! : self.pickerImage1!.image!
+            self.image = self.data1Shown ? self.pickerImage2!.getImage()! : self.pickerImage1!.getImage()!
             self.data1Shown = !self.data1Shown
             
             // make changes visible
