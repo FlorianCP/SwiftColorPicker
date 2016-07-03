@@ -15,13 +15,19 @@ import UIKit
         }
     }
 
-
     public var previewColor:UIColor? {
         didSet {
             setNeedsDisplay()
         }
     }
+    
     @IBInspectable public var borderColor:UIColor = UIColor.darkGray() {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    @IBInspectable public var disabledBorderColor:UIColor = UIColor.lightGray() {
         didSet {
             setNeedsDisplay()
         }
@@ -66,10 +72,21 @@ import UIKit
             ovalPath.fill()
         }
         
-        borderColor.setStroke()
+        if self.isEnabled {
+            borderColor.setStroke()
+        } else {
+            self.disabledBorderColor.setStroke()
+        }
         ovalPath.lineWidth = borderWidth
         ovalPath.stroke()
     }
-
+    
+    // MARK: isEnabled
+    
+    override public var isEnabled: Bool {
+        didSet {
+            self.setNeedsDisplay()
+        }
+    }
 
 }
